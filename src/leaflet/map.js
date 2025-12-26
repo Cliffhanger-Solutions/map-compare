@@ -275,8 +275,9 @@ export function initMap() {
   const [lng, lat] = getCenter();
 
   // Create map - Leaflet uses [lat, lng] order
+  // NYC: lng: -74.0060, lat: 40.7128
   map = new Map('map-leaflet', {
-    center: [lat, lng],
+    center: [lat, lng], // [40.7128, -74.0060]
     zoom: 11
   });
 

@@ -4,15 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A comparison demo app for evaluating three mapping libraries: MapLibre GL JS, OpenLayers, and Leaflet 2.0 Alpha. Uses fake GeoJSON data to demonstrate layer types, interactivity, and performance differences between WebGL (MapLibre) and Canvas (OpenLayers, Leaflet) rendering approaches.
+A comparison demo app for evaluating three mapping libraries in order of progressive improvement: Leaflet 2.0 Alpha, OpenLayers, and MapLibre GL JS. Uses fake GeoJSON data to demonstrate layer types, interactivity, and performance differences between Canvas (Leaflet, OpenLayers) and WebGL (MapLibre) rendering approaches.
 
 ## Commands
 
 ```bash
-npm run dev      # Start dev server on localhost:3000
-npm run build    # Production build to dist/
-npm run preview  # Preview production build
+npm run dev              # Start dev server on localhost:3000
+npm run dev -- --host    # Start dev server with network access for mobile testing
+npm run build            # Production build to dist/
+npm run preview          # Preview production build
 ```
+
+**Mobile testing:** Use `npm run dev -- --host` to expose the server to your network (0.0.0.0). Access from mobile device at `http://[your-ip]:[port]/`
 
 ## Architecture
 
@@ -20,9 +23,9 @@ npm run preview  # Preview production build
 src/
 ├── main.js              # Entry point: tab switching, layer controls, animation loop
 ├── data/fake-data.js    # GeoJSON generators: getPoints(), getPolygons(), getLines()
-├── maplibre/map.js      # MapLibre GL JS implementation
-├── openlayers/map.js    # OpenLayers implementation
-├── leaflet/map.js       # Leaflet 2.0 Alpha implementation
+├── leaflet/map.js       # Leaflet 2.0 Alpha implementation (Canvas)
+├── openlayers/map.js    # OpenLayers implementation (Canvas)
+├── maplibre/map.js      # MapLibre GL JS implementation (WebGL)
 └── styles/main.css      # Dark theme UI
 ```
 
@@ -31,9 +34,39 @@ src/
 - Layer IDs: `points`, `polygons`, `lines`, `heatmap`, `cluster`
 - Animation updates all three maps simultaneously via `updatePointPositions()` to stress-test rendering
 
-**MapLibre approach:** Style-spec JSON, `map.addSource()` + `map.addLayer()`, GPU-accelerated WebGL
-**OpenLayers approach:** Class-based (VectorLayer, VectorSource, Style objects), Canvas 2D rendering
-**Leaflet approach:** ES6 constructors (`new Map()`, `new CircleMarker()`, etc.), Canvas rendering, coordinate order is `[lat, lng]` (not `[lng, lat]`)
+**Tab Order** (progressive improvement):
+1. **Leaflet approach:** ES6 constructors (`new Map()`, `new CircleMarker()`, etc.), Canvas rendering, coordinate order is `[lat, lng]` (not `[lng, lat]`)
+2. **OpenLayers approach:** Class-based (VectorLayer, VectorSource, Style objects), Canvas 2D rendering
+3. **MapLibre approach:** Style-spec JSON, `map.addSource()` + `map.addLayer()`, GPU-accelerated WebGL
+
+## Mobile-Friendly UI
+
+The app uses a **hybrid bottom sheet + floating FPS badge** design for mobile devices:
+
+### Responsive Breakpoints
+- **Desktop (>1024px):** Two-column layout with 280px sidebar
+- **Tablet (769-1024px):** Compressed 240px sidebar
+- **Mobile (≤768px):** Bottom sheet controls + floating FPS badge
+- **Small phones (≤480px):** Additional space optimizations
+
+### Mobile Features
+- **Floating FPS Badge:** Always visible in top-right corner for performance testing (primary goal)
+- **Bottom Sheet Controls:** Collapsible drawer starting collapsed on mobile, tap red circular button to expand/collapse
+- **Touch-Optimized:** 44px minimum touch targets throughout
+- **Code Modal:** Tap "Code Comparison (i)" to view code snippets in full-screen modal
+- **Stacked Header:** Title and tabs in full-width grid layout
+
+### Mobile JavaScript Functions
+- `setupMobileControls()` - Handles bottom sheet toggle, only runs on mobile (≤768px)
+- `setupCodeModal()` - Code viewer modal for mobile, syncs content on tap
+- `setupResizeHandler()` - Debounced resize handler for orientation changes, triggers map resize methods
+- `setupPerformanceMonitor()` - Updates both desktop (#fps) and mobile (#fps-mobile) FPS displays
+
+### Key Mobile Interactions
+- Bottom sheet starts collapsed to maximize map visibility
+- FPS badge color-coded: green (≥55 FPS), yellow (≥30 FPS), red (<30 FPS)
+- Desktop performance stats hidden on mobile (use floating badge instead)
+- Code panel hidden in sidebar on mobile (use modal overlay instead)
 
 ## Implementation Notes
 

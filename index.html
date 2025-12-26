@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MapLibre GL JS vs OpenLayers vs Leaflet 2.0</title>
+  <title>Leaflet 2.0 vs OpenLayers vs MapLibre GL JS</title>
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body>
@@ -11,14 +11,17 @@
     <header class="header">
       <h1>Map Library Comparison</h1>
       <div class="tabs">
-        <button class="tab active" data-tab="maplibre">MapLibre GL JS</button>
+        <button class="tab active" data-tab="leaflet">Leaflet 2.0 Alpha</button>
         <button class="tab" data-tab="openlayers">OpenLayers</button>
-        <button class="tab" data-tab="leaflet">Leaflet 2.0 Alpha</button>
+        <button class="tab" data-tab="maplibre">MapLibre GL JS</button>
       </div>
     </header>
 
     <main class="main">
       <aside class="controls">
+        <button id="drawer-toggle" class="drawer-toggle" aria-label="Toggle controls">
+          <span class="hamburger"></span>
+        </button>
         <h3>Layers</h3>
         <label class="control">
           <input type="checkbox" id="layer-points" checked>
@@ -57,18 +60,38 @@
           </div>
         </div>
 
-        <h3>Code Comparison</h3>
-        <div class="code-panel">
-          <pre id="code-snippet">// Select a layer to see code</pre>
+        <div class="code-section">
+          <h3>
+            Code Comparison
+            <button class="code-info-btn" aria-label="View code">i</button>
+          </h3>
+          <div class="code-panel">
+            <pre id="code-snippet">// Select a layer to see code</pre>
+          </div>
         </div>
       </aside>
 
       <div class="map-container">
-        <div id="map-maplibre" class="map active"></div>
+        <div class="fps-badge">
+          <div class="fps-label">FPS</div>
+          <div class="fps-value" id="fps-mobile">--</div>
+        </div>
+        <div id="map-leaflet" class="map active"></div>
         <div id="map-openlayers" class="map"></div>
-        <div id="map-leaflet" class="map"></div>
+        <div id="map-maplibre" class="map"></div>
       </div>
     </main>
+
+    <div class="code-modal" id="code-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <button class="modal-close">&times;</button>
+        <h3>Code Comparison</h3>
+        <div class="code-panel">
+          <pre id="code-snippet-modal">// Code appears here</pre>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

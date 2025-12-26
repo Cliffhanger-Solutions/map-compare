@@ -342,3 +342,342 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: #e94560;
 }
+
+/* ==========================================
+   MOBILE RESPONSIVE STYLES
+   ========================================== */
+
+/* Floating FPS Badge - Hidden on desktop */
+.fps-badge {
+  display: none;
+}
+
+/* Drawer toggle - Hidden on desktop */
+.drawer-toggle {
+  display: none;
+}
+
+/* Code info button - Hidden on desktop */
+.code-info-btn {
+  display: none;
+}
+
+/* Code modal - Hidden on desktop */
+.code-modal {
+  display: none;
+}
+
+/* Mobile: Primary breakpoint for phones */
+@media (max-width: 768px) {
+  /* Display floating FPS badge on mobile */
+  .fps-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    background: rgba(22, 33, 62, 0.95);
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 8px 12px;
+    z-index: 1000;
+    min-width: 60px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .fps-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .fps-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2ecc71;
+    margin-top: 2px;
+  }
+
+  /* Header: Stack title and tabs vertically */
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .header h1 {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  /* Tabs: Full width grid */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .tab {
+    padding: 10px 8px;
+    font-size: 0.85rem;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  /* Main: Full height map with bottom sheet */
+  .main {
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Map: Full screen */
+  .map-container {
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Controls: Transform into bottom sheet */
+  .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 60vh;
+    height: auto;
+    border-right: none;
+    border-top: 2px solid #e94560;
+    border-radius: 16px 16px 0 0;
+    z-index: 900;
+    transition: transform 0.3s ease;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Collapsed state: Show only toggle button */
+  .controls.collapsed {
+    transform: translateY(calc(100% - 48px));
+  }
+
+  /* Drawer toggle button */
+  .drawer-toggle {
+    display: block;
+    position: absolute;
+    top: -40px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: #e94560;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 901;
+  }
+
+  .drawer-toggle .hamburger {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: #fff;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .drawer-toggle .hamburger::before,
+  .drawer-toggle .hamburger::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 2px;
+    background: #fff;
+    left: 0;
+  }
+
+  .drawer-toggle .hamburger::before {
+    top: -8px;
+  }
+
+  .drawer-toggle .hamburger::after {
+    top: 8px;
+  }
+
+  /* Hide desktop performance stats (use floating badge instead) */
+  .controls .perf-stats {
+    display: none;
+  }
+
+  /* Layer controls: Larger touch targets */
+  .control {
+    padding: 12px 0;
+    min-height: 44px;
+  }
+
+  .control input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+  }
+
+  .control span {
+    font-size: 1rem;
+  }
+
+  /* Animation button: Larger touch target */
+  .animate-btn {
+    padding: 14px;
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  /* Code section: Make tappable with info button */
+  .code-section {
+    cursor: pointer;
+  }
+
+  .code-section h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .code-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #0f3460;
+    color: #e94560;
+    border: 1px solid #e94560;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Hide code panel in sidebar on mobile */
+  .controls .code-panel {
+    display: none;
+  }
+
+  /* Code Modal: Full screen overlay */
+  .code-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+  }
+
+  .code-modal.active {
+    display: block;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    background: #16213e;
+    border-radius: 8px;
+    padding: 20px;
+    overflow: auto;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal-close:hover {
+    color: #fff;
+  }
+
+  .modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #e94560;
+  }
+
+  .modal-content .code-panel {
+    display: block;
+    max-height: 60vh;
+  }
+}
+
+/* Small phones: Additional space optimizations */
+@media (max-width: 480px) {
+  .header h1 {
+    font-size: 1rem;
+  }
+
+  .tab {
+    font-size: 0.75rem;
+    padding: 10px 4px;
+  }
+
+  .fps-badge {
+    top: 65px;
+    right: 8px;
+    padding: 6px 10px;
+    min-width: 55px;
+  }
+
+  .fps-label {
+    font-size: 0.65rem;
+  }
+
+  .fps-value {
+    font-size: 1.1rem;
+  }
+
+  .controls {
+    max-height: 70vh;
+  }
+
+  .controls h3 {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablet: Compressed sidebar, keep desktop layout */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .controls {
+    width: 240px;
+  }
+
+  .header h1 {
+    font-size: 1.15rem;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+}

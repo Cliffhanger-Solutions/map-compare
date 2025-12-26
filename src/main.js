@@ -4,7 +4,7 @@ import * as leafletModule from './leaflet/map.js';
 import { getPoints, getCenter } from './data/fake-data.js';
 
 // Current active library
-let activeLib = 'maplibre';
+let activeLib = 'leaflet';
 let maplibreMap = null;
 let openlayersMap = null;
 let leafletMap = null;
@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupLayerControls();
   setupAnimationButton();
   setupPerformanceMonitor();
+  setupMobileControls();
+  setupCodeModal();
+  setupResizeHandler();
   updateCodeSnippet('points');
 });
 
@@ -70,12 +73,18 @@ function setupTabs() {
       if (tabName === 'maplibre') {
         maplibreContainer.classList.add('active');
         activeLib = 'maplibre';
+        // Trigger resize to recalculate viewport after becoming visible
+        setTimeout(() => maplibreMap.resize(), 0);
       } else if (tabName === 'openlayers') {
         openlayersContainer.classList.add('active');
         activeLib = 'openlayers';
+        // Trigger resize to recalculate viewport after becoming visible
+        setTimeout(() => openlayersMap.updateSize(), 0);
       } else if (tabName === 'leaflet') {
         leafletContainer.classList.add('active');
         activeLib = 'leaflet';
+        // Trigger resize to recalculate viewport after becoming visible
+        setTimeout(() => leafletMap.invalidateSize(), 0);
       }
 
       // Update code snippet for current layer selection
@@ -235,6 +244,7 @@ function setupPerformanceMonitor() {
   let frameCount = 0;
   let lastTime = performance.now();
   const fpsElement = document.getElementById('fps');
+  const fpsMobile = document.getElementById('fps-mobile');
 
   function updateFPS() {
     frameCount++;
@@ -243,16 +253,15 @@ function setupPerformanceMonitor() {
 
     if (delta >= 1000) {
       const fps = Math.round((frameCount * 1000) / delta);
-      fpsElement.textContent = fps;
 
-      // Color code FPS
-      if (fps >= 55) {
-        fpsElement.style.color = '#2ecc71'; // Green
-      } else if (fps >= 30) {
-        fpsElement.style.color = '#f1c40f'; // Yellow
-      } else {
-        fpsElement.style.color = '#e74c3c'; // Red
-      }
+      // Update both desktop and mobile FPS displays
+      fpsElement.textContent = fps;
+      if (fpsMobile) fpsMobile.textContent = fps;
+
+      // Color code FPS (apply to both)
+      const color = fps >= 55 ? '#2ecc71' : fps >= 30 ? '#f1c40f' : '#e74c3c';
+      fpsElement.style.color = color;
+      if (fpsMobile) fpsMobile.style.color = color;
 
       frameCount = 0;
       lastTime = now;
@@ -262,4 +271,75 @@ function setupPerformanceMonitor() {
   }
 
   requestAnimationFrame(updateFPS);
+}
+
+function setupMobileControls() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+  if (!isMobile) return;
+
+  const controls = document.querySelector('.controls');
+  const drawerToggle = document.getElementById('drawer-toggle');
+
+  if (!drawerToggle) return;
+
+  // Start collapsed on mobile
+  controls.classList.add('collapsed');
+  drawerToggle.setAttribute('aria-expanded', 'false');
+
+  drawerToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isCollapsed = controls.classList.toggle('collapsed');
+    drawerToggle.setAttribute('aria-expanded', !isCollapsed);
+  });
+}
+
+function setupCodeModal() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  if (!isMobile) return;
+
+  const codeSection = document.querySelector('.code-section');
+  const codeModal = document.getElementById('code-modal');
+  const modalBackdrop = codeModal?.querySelector('.modal-backdrop');
+  const modalClose = codeModal?.querySelector('.modal-close');
+  const codeSnippetMain = document.getElementById('code-snippet');
+  const codeSnippetModal = document.getElementById('code-snippet-modal');
+
+  if (!codeSection || !codeModal) return;
+
+  // Open modal when code section tapped
+  codeSection.addEventListener('click', () => {
+    // Sync code content to modal
+    if (codeSnippetModal && codeSnippetMain) {
+      codeSnippetModal.textContent = codeSnippetMain.textContent;
+    }
+    codeModal.classList.add('active');
+  });
+
+  // Close on backdrop tap
+  modalBackdrop?.addEventListener('click', () => {
+    codeModal.classList.remove('active');
+  });
+
+  // Close on X button
+  modalClose?.addEventListener('click', () => {
+    codeModal.classList.remove('active');
+  });
+}
+
+function setupResizeHandler() {
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      // Re-trigger map resize for active library
+      if (activeLib === 'maplibre' && maplibreMap) {
+        maplibreMap.resize();
+      } else if (activeLib === 'openlayers' && openlayersMap) {
+        openlayersMap.updateSize();
+      } else if (activeLib === 'leaflet' && leafletMap) {
+        leafletMap.invalidateSize();
+      }
+    }, 200);
+  });
 }
