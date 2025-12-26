@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapLibre GL JS vs OpenLayers vs Leaflet 2.0</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Map Library Comparison</h1>
+      <div class="tabs">
+        <button class="tab active" data-tab="maplibre">MapLibre GL JS</button>
+        <button class="tab" data-tab="openlayers">OpenLayers</button>
+        <button class="tab" data-tab="leaflet">Leaflet 2.0 Alpha</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="controls">
+        <h3>Layers</h3>
+        <label class="control">
+          <input type="checkbox" id="layer-points" checked>
+          <span>Points</span>
+        </label>
+        <label class="control">
+          <input type="checkbox" id="layer-polygons" checked>
+          <span>Polygons</span>
+        </label>
+        <label class="control">
+          <input type="checkbox" id="layer-lines" checked>
+          <span>Lines</span>
+        </label>
+        <label class="control">
+          <input type="checkbox" id="layer-heatmap">
+          <span>Heatmap</span>
+        </label>
+        <label class="control">
+          <input type="checkbox" id="layer-cluster">
+          <span>Clustering</span>
+        </label>
+
+        <h3>Stress Test</h3>
+        <button class="animate-btn" id="animate-btn">Start Animation</button>
+        <p class="animate-hint">Animates 1000 points to stress test rendering</p>
+
+        <h3>Performance</h3>
+        <div class="perf-stats">
+          <div class="stat">
+            <span class="stat-label">FPS:</span>
+            <span class="stat-value" id="fps">--</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Features:</span>
+            <span class="stat-value" id="feature-count">--</span>
+          </div>
+        </div>
+
+        <h3>Code Comparison</h3>
+        <div class="code-panel">
+          <pre id="code-snippet">// Select a layer to see code</pre>
+        </div>
+      </aside>
+
+      <div class="map-container">
+        <div id="map-maplibre" class="map active"></div>
+        <div id="map-openlayers" class="map"></div>
+        <div id="map-leaflet" class="map"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

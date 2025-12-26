@@ -1,0 +1,344 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+}
+
+/* App layout */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e94560;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  padding: 8px 20px;
+  border: none;
+  background: #0f3460;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #1a4a7a;
+  color: #fff;
+}
+
+.tab.active {
+  background: #e94560;
+  color: #fff;
+}
+
+/* Main content */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Controls sidebar */
+.controls {
+  width: 280px;
+  padding: 16px;
+  background: #16213e;
+  border-right: 1px solid #0f3460;
+  overflow-y: auto;
+}
+
+.controls h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 12px;
+  margin-top: 20px;
+}
+
+.controls h3:first-child {
+  margin-top: 0;
+}
+
+/* Layer controls */
+.control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.control input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #e94560;
+}
+
+.control span {
+  font-size: 0.95rem;
+}
+
+/* Animate button */
+.animate-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #0f3460;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.animate-btn:hover {
+  background: #1a4a7a;
+}
+
+.animate-btn.active {
+  background: #e94560;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-hint {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Performance stats */
+.perf-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #0f3460;
+  border-radius: 4px;
+}
+
+.stat-label {
+  color: #888;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #2ecc71;
+}
+
+/* Code panel */
+.code-panel {
+  background: #0d1b2a;
+  border-radius: 4px;
+  padding: 12px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.code-panel pre {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #a8dadc;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Map container */
+.map-container {
+  flex: 1;
+  position: relative;
+}
+
+.map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.map.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* MapLibre popup override */
+.maplibregl-popup-content {
+  background: #16213e;
+  color: #eee;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.maplibregl-popup-tip {
+  border-top-color: #16213e;
+}
+
+.maplibregl-popup-close-button {
+  color: #888;
+  font-size: 18px;
+}
+
+/* OpenLayers popup */
+.ol-popup {
+  position: absolute;
+  background: #16213e;
+  color: #eee;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  min-width: 150px;
+}
+
+.ol-popup::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #16213e;
+}
+
+.ol-popup-closer {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  color: #888;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Leaflet popup styles - match app theme */
+.leaflet-popup-content-wrapper {
+  background: #16213e;
+  color: #eee;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.leaflet-popup-tip {
+  background: #16213e;
+}
+
+.leaflet-popup-close-button {
+  color: #888;
+  font-size: 18px;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #fff;
+}
+
+/* Leaflet marker cluster styles - match theme */
+.marker-cluster-small {
+  background-color: rgba(46, 204, 113, 0.6);
+}
+
+.marker-cluster-small div {
+  background-color: rgba(46, 204, 113, 0.9);
+}
+
+.marker-cluster-medium {
+  background-color: rgba(241, 196, 15, 0.6);
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(241, 196, 15, 0.9);
+}
+
+.marker-cluster-large {
+  background-color: rgba(233, 69, 96, 0.6);
+}
+
+.marker-cluster-large div {
+  background-color: rgba(233, 69, 96, 0.9);
+}
+
+.marker-cluster div {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Leaflet controls - dark theme */
+.leaflet-control-zoom a {
+  background: #16213e;
+  color: #eee;
+  border-color: #0f3460;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #1a4a7a;
+  color: #fff;
+}
+
+.leaflet-bar {
+  border: 1px solid #0f3460;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f3460;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a4a7a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e94560;
+}
