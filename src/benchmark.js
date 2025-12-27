@@ -13,7 +13,8 @@ const TEST_DURATION_MS = 5000;
 
 // Shared view configuration (matching all maps)
 const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat]
-const VIEW_ZOOM = 11;
+const VIEW_ZOOM_CANVAS = 11; // Leaflet, OpenLayers (Canvas)
+const VIEW_ZOOM_WEBGL = 10;  // MapLibre, Deck.gl (WebGL renders 1 level deeper)
 
 // Library display names
 export const LIBRARY_NAMES = {
@@ -209,7 +210,7 @@ function switchToTab(lib) {
       if (lib === 'maplibre' && map) {
         map.resize();
         // Reset view to ensure consistent bounds
-        map.jumpTo({ center: VIEW_CENTER, zoom: VIEW_ZOOM });
+        map.jumpTo({ center: VIEW_CENTER, zoom: VIEW_ZOOM_WEBGL });
       } else if (lib === 'openlayers' && map) {
         map.updateSize();
       } else if (lib === 'leaflet' && map) {
@@ -220,7 +221,7 @@ function switchToTab(lib) {
           initialViewState: {
             longitude: VIEW_CENTER[0],
             latitude: VIEW_CENTER[1],
-            zoom: VIEW_ZOOM,
+            zoom: VIEW_ZOOM_WEBGL,
             pitch: 0,
             bearing: 0
           }
