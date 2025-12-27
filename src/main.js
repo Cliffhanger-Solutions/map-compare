@@ -3,6 +3,17 @@ import * as openlayersModule from './openlayers/map.js';
 import * as leafletModule from './leaflet/map.js';
 import * as deckglModule from './deckgl/map.js';
 import { getPoints, getAllData } from './data/fake-data.js';
+import Chart from 'chart.js/auto';
+import {
+  runBenchmark,
+  cancelBenchmark,
+  resetBenchmark,
+  getBenchmarkResults,
+  LIBRARIES,
+  POINT_COUNTS,
+  LIBRARY_NAMES,
+  LIBRARY_COLORS
+} from './benchmark.js';
 
 // Current active library
 let activeLib = 'leaflet';
@@ -40,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMobileControls();
   setupCodeModal();
   setupResizeHandler();
+  setupBenchmark();
   updateCodeSnippet('points');
 });
 
@@ -324,20 +336,66 @@ function updateCodeSnippet(layerId) {
 function setupPerformanceMonitor() {
   let frameCount = 0;
   let lastTime = performance.now();
+  let lastFrameTime = performance.now();
+  const frameTimes = []; // Rolling window of frame times
+  const FRAME_WINDOW = 60; // Track last 60 frames for variance calculation
+
   const fpsElement = document.getElementById('fps');
   const fpsMobile = document.getElementById('fps-mobile');
+  const frameTimeElement = document.getElementById('frame-time');
+  const jitterElement = document.getElementById('jitter');
+  const jitterMobile = document.getElementById('jitter-mobile');
+
+  function calculateJitter(times) {
+    if (times.length < 2) return 0;
+
+    // Calculate standard deviation of frame times
+    const mean = times.reduce((a, b) => a + b, 0) / times.length;
+    const squaredDiffs = times.map(t => Math.pow(t - mean, 2));
+    const avgSquaredDiff = squaredDiffs.reduce((a, b) => a + b, 0) / times.length;
+    return Math.sqrt(avgSquaredDiff);
+  }
 
   function updateFPS() {
-    frameCount++;
     const now = performance.now();
+    const frameTime = now - lastFrameTime;
+    lastFrameTime = now;
+
+    // Track frame times in rolling window
+    frameTimes.push(frameTime);
+    if (frameTimes.length > FRAME_WINDOW) {
+      frameTimes.shift();
+    }
+
+    frameCount++;
     const delta = now - lastTime;
 
     if (delta >= 1000) {
       const fps = Math.round((frameCount * 1000) / delta);
+      const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+      const jitter = calculateJitter(frameTimes);
 
-      // Update both desktop and mobile FPS displays
+      // Update FPS displays
       fpsElement.textContent = fps;
       if (fpsMobile) fpsMobile.textContent = fps;
+
+      // Update frame time
+      if (frameTimeElement) {
+        frameTimeElement.textContent = avgFrameTime.toFixed(1);
+      }
+
+      // Update jitter displays
+      if (jitterElement) {
+        jitterElement.textContent = jitter.toFixed(1);
+        // Color code jitter: green (<2ms), yellow (2-5ms), red (>5ms)
+        const jitterColor = jitter < 2 ? '#2ecc71' : jitter < 5 ? '#f1c40f' : '#e74c3c';
+        jitterElement.style.color = jitterColor;
+      }
+      if (jitterMobile) {
+        jitterMobile.textContent = jitter.toFixed(1);
+        const jitterColor = jitter < 2 ? '#2ecc71' : jitter < 5 ? '#f1c40f' : '#e74c3c';
+        jitterMobile.style.color = jitterColor;
+      }
 
       // Color code FPS (apply to both)
       const color = fps >= 55 ? '#2ecc71' : fps >= 30 ? '#f1c40f' : '#e74c3c';
@@ -423,4 +481,259 @@ function setupResizeHandler() {
       }
     }, 200);
   });
+}
+
+// ==========================================
+// BENCHMARK FEATURE
+// ==========================================
+
+let benchmarkChart = null;
+
+function setupBenchmark() {
+  const benchmarkBtn = document.getElementById('benchmark-btn');
+  const benchmarkModal = document.getElementById('benchmark-modal');
+  const cancelBtn = document.getElementById('benchmark-cancel-btn');
+  const closeModalBtn = document.getElementById('benchmark-close');
+  const closeResultsBtn = document.getElementById('close-results');
+  const progressSection = document.getElementById('benchmark-progress');
+  const resultsSection = document.getElementById('benchmark-results');
+  const metricBtns = document.querySelectorAll('.metric-btn');
+
+  if (!benchmarkBtn || !benchmarkModal) return;
+
+  // Start benchmark
+  benchmarkBtn.addEventListener('click', async () => {
+    // Stop any running animation
+    if (isAnimating) {
+      stopAnimation();
+      document.getElementById('animate-btn').textContent = 'Start Animation';
+      document.getElementById('animate-btn').classList.remove('active');
+    }
+
+    // Disable controls
+    disableControls(true);
+
+    // Show modal with progress
+    benchmarkModal.classList.add('active');
+    progressSection.style.display = 'block';
+    resultsSection.style.display = 'none';
+
+    try {
+      const results = await runBenchmark(updateProgress);
+
+      // Show results
+      progressSection.style.display = 'none';
+      resultsSection.style.display = 'block';
+
+      // Initialize chart
+      initBenchmarkChart(results, 'fps');
+
+    } catch (error) {
+      if (error.message !== 'Benchmark cancelled') {
+        console.error('Benchmark error:', error);
+      }
+      closeBenchmarkModal();
+    }
+  });
+
+  // Cancel benchmark
+  cancelBtn.addEventListener('click', () => {
+    cancelBenchmark();
+  });
+
+  // Close modal (X button)
+  closeModalBtn.addEventListener('click', () => {
+    cancelBenchmark();
+    closeBenchmarkModal();
+  });
+
+  // Close results
+  closeResultsBtn.addEventListener('click', () => {
+    closeBenchmarkModal();
+  });
+
+  // Metric toggle buttons
+  metricBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      metricBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const metric = btn.dataset.metric;
+      const results = getBenchmarkResults();
+      updateChartMetric(results, metric);
+    });
+  });
+
+  // Backdrop click to close (only if results showing)
+  benchmarkModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+    if (resultsSection.style.display !== 'none') {
+      closeBenchmarkModal();
+    }
+  });
+}
+
+function updateProgress({ library, pointCount, testNumber, totalTests, progress }) {
+  document.getElementById('benchmark-library').textContent = library;
+  document.getElementById('benchmark-points').textContent =
+    pointCount.toLocaleString() + ' points';
+  document.getElementById('benchmark-status').textContent =
+    `Test ${testNumber} of ${totalTests}`;
+  document.getElementById('benchmark-progress-fill').style.width = `${progress}%`;
+}
+
+function disableControls(disabled) {
+  const controls = document.querySelector('.controls');
+  const tabs = document.querySelector('.tabs');
+  const benchmarkBtn = document.getElementById('benchmark-btn');
+
+  if (disabled) {
+    controls.classList.add('disabled');
+    tabs.classList.add('disabled');
+    benchmarkBtn.disabled = true;
+  } else {
+    controls.classList.remove('disabled');
+    tabs.classList.remove('disabled');
+    benchmarkBtn.disabled = false;
+  }
+}
+
+function closeBenchmarkModal() {
+  const benchmarkModal = document.getElementById('benchmark-modal');
+  benchmarkModal.classList.remove('active');
+  disableControls(false);
+  resetBenchmark();
+
+  // Destroy chart to free memory
+  if (benchmarkChart) {
+    benchmarkChart.destroy();
+    benchmarkChart = null;
+  }
+
+  // Reset metric buttons
+  const metricBtns = document.querySelectorAll('.metric-btn');
+  metricBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.metric === 'fps');
+  });
+}
+
+function initBenchmarkChart(results, metric) {
+  const ctx = document.getElementById('benchmark-chart').getContext('2d');
+
+  // Destroy existing chart if any
+  if (benchmarkChart) {
+    benchmarkChart.destroy();
+  }
+
+  const datasets = LIBRARIES.map(lib => ({
+    label: LIBRARY_NAMES[lib],
+    data: POINT_COUNTS.map(count => getMetricValue(results, lib, count, metric)),
+    borderColor: LIBRARY_COLORS[lib],
+    backgroundColor: LIBRARY_COLORS[lib] + '33', // 20% opacity
+    borderWidth: 3,
+    pointRadius: 6,
+    pointHoverRadius: 8,
+    tension: 0.3,
+    fill: false
+  }));
+
+  benchmarkChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: POINT_COUNTS.map(c => c >= 1000 ? `${c / 1000}K` : c.toString()),
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#eee',
+            font: { size: 12 },
+            usePointStyle: true,
+            padding: 20
+          }
+        },
+        tooltip: {
+          backgroundColor: '#16213e',
+          titleColor: '#eee',
+          bodyColor: '#eee',
+          borderColor: '#0f3460',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (context) => {
+              const lib = LIBRARIES[context.datasetIndex];
+              const count = POINT_COUNTS[context.dataIndex];
+              const data = results[lib][count];
+
+              if (metric === 'fps') {
+                return `${context.dataset.label}: ${data.avgFps} FPS (min: ${data.minFps}, max: ${data.maxFps})`;
+              } else if (metric === 'frameTime') {
+                return `${context.dataset.label}: ${data.avgFrameTime}ms`;
+              } else {
+                return `${context.dataset.label}: ${data.jitter}ms`;
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Point Count',
+            color: '#888'
+          },
+          ticks: { color: '#888' },
+          grid: { color: '#0f3460' }
+        },
+        y: {
+          title: {
+            display: true,
+            text: getYAxisLabel(metric),
+            color: '#888'
+          },
+          ticks: { color: '#888' },
+          grid: { color: '#0f3460' },
+          beginAtZero: metric !== 'fps'
+        }
+      }
+    }
+  });
+}
+
+function updateChartMetric(results, metric) {
+  if (!benchmarkChart) return;
+
+  benchmarkChart.data.datasets.forEach((dataset, index) => {
+    const lib = LIBRARIES[index];
+    dataset.data = POINT_COUNTS.map(count =>
+      getMetricValue(results, lib, count, metric)
+    );
+  });
+
+  benchmarkChart.options.scales.y.title.text = getYAxisLabel(metric);
+  benchmarkChart.options.scales.y.beginAtZero = metric !== 'fps';
+  benchmarkChart.update();
+}
+
+function getMetricValue(results, lib, count, metric) {
+  const data = results[lib][count];
+  switch (metric) {
+    case 'fps': return data.avgFps;
+    case 'frameTime': return data.avgFrameTime;
+    case 'jitter': return data.jitter;
+    default: return data.avgFps;
+  }
+}
+
+function getYAxisLabel(metric) {
+  switch (metric) {
+    case 'fps': return 'Frames Per Second';
+    case 'frameTime': return 'Frame Time (ms)';
+    case 'jitter': return 'Jitter (ms)';
+    default: return 'Value';
+  }
 }

@@ -201,6 +201,13 @@ html, body {
   color: #2ecc71;
 }
 
+.stat-unit {
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
 /* Code panel */
 .code-panel {
   background: #0d1b2a;
@@ -430,6 +437,29 @@ html, body {
     font-weight: 700;
     color: #2ecc71;
     margin-top: 2px;
+  }
+
+  .fps-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .jitter-row {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #0f3460;
+  }
+
+  .jitter-row .fps-value {
+    font-size: 1rem;
+  }
+
+  .fps-unit {
+    font-size: 0.65rem;
+    color: #888;
+    font-weight: 400;
+    margin-left: 1px;
   }
 
   /* Header: Stack title and tabs vertically */
@@ -711,5 +741,262 @@ html, body {
   .tab {
     padding: 8px 16px;
     font-size: 0.85rem;
+  }
+}
+
+/* ==========================================
+   BENCHMARK FEATURE STYLES
+   ========================================== */
+
+/* Benchmark button in header */
+.benchmark-btn {
+  padding: 8px 16px;
+  border: 2px solid #e94560;
+  background: transparent;
+  color: #e94560;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.benchmark-btn:hover {
+  background: #e94560;
+  color: #fff;
+}
+
+.benchmark-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Benchmark Modal */
+.benchmark-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+}
+
+.benchmark-modal.active {
+  display: block;
+}
+
+.benchmark-modal .modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.benchmark-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 24px;
+  overflow: auto;
+}
+
+.benchmark-content .modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.benchmark-content .modal-close:hover {
+  color: #fff;
+}
+
+/* Progress UI */
+.benchmark-progress h3 {
+  color: #e94560;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+
+.benchmark-progress {
+  text-align: center;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #0f3460;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e94560, #f39c12);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-status {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+.cancel-btn {
+  padding: 10px 24px;
+  border: 1px solid #888;
+  background: transparent;
+  color: #888;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+/* Results UI */
+.benchmark-results {
+  display: none;
+  text-align: center;
+}
+
+.benchmark-results h3 {
+  color: #e94560;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+
+.chart-container {
+  background: #0d1b2a;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  height: 350px;
+}
+
+.metric-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.metric-btn {
+  padding: 8px 16px;
+  border: 1px solid #0f3460;
+  background: #0f3460;
+  color: #888;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.metric-btn:hover {
+  background: #1a4a7a;
+  color: #fff;
+}
+
+.metric-btn.active {
+  background: #e94560;
+  color: #fff;
+  border-color: #e94560;
+}
+
+.close-results-btn {
+  padding: 12px 32px;
+  border: none;
+  background: #e94560;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.close-results-btn:hover {
+  background: #c73e54;
+}
+
+/* Disabled controls overlay during benchmark */
+.controls.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.tabs.disabled .tab {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Mobile responsive for benchmark */
+@media (max-width: 768px) {
+  .benchmark-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .benchmark-content {
+    width: 95%;
+    max-width: none;
+    padding: 16px;
+  }
+
+  .chart-container {
+    height: 250px;
+    padding: 12px;
+  }
+
+  .metric-toggle {
+    flex-wrap: wrap;
+  }
+
+  .metric-btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .progress-info {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .benchmark-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .chart-container {
+    height: 200px;
   }
 }

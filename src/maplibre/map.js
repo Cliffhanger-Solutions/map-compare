@@ -1,6 +1,10 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { getAllData, getBounds } from '../data/fake-data.js';
+import { getAllData } from '../data/fake-data.js';
+
+// Shared view configuration (matching Leaflet's discrete zoom)
+const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat]
+const VIEW_ZOOM = 11;
 
 let map = null;
 let popup = null;
@@ -119,8 +123,6 @@ map.addLayer({
 };
 
 export function initMap() {
-  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
-
   map = new maplibregl.Map({
     container: 'map-maplibre',
     style: {
@@ -141,8 +143,8 @@ export function initMap() {
         maxzoom: 19
       }]
     },
-    bounds: [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
-    fitBoundsOptions: { padding: 20 }
+    center: VIEW_CENTER,
+    zoom: VIEW_ZOOM
   });
 
   popup = new maplibregl.Popup({

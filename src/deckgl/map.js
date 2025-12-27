@@ -3,11 +3,14 @@ import { GeoJsonLayer, ScatterplotLayer, PathLayer } from '@deck.gl/layers';
 import { TileLayer } from '@deck.gl/geo-layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { BitmapLayer } from '@deck.gl/layers';
-import { getAllData, getCenter, getBounds } from '../data/fake-data.js';
+import { getAllData } from '../data/fake-data.js';
+
+// Shared view configuration (matching Leaflet's discrete zoom)
+const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat]
+const VIEW_ZOOM = 11;
 
 let deck = null;
 const data = getAllData();
-const center = getCenter();
 
 // Layer visibility state
 const layerVisibility = {
@@ -30,10 +33,12 @@ const pointsLayer = new ScatterplotLayer({
   id: 'points',
   data: pointsGeoJSON.features,
   getPosition: d => d.geometry.coordinates,
-  getRadius: 200,
+  getRadius: 6,
+  radiusUnits: 'pixels',
   getFillColor: [233, 69, 96],
   getLineColor: [255, 255, 255],
   getLineWidth: 2,
+  lineWidthUnits: 'pixels',
   stroked: true,
   pickable: true
 });`,
@@ -213,10 +218,12 @@ function createLayers() {
         id: 'cluster-placeholder',
         data: currentPointData.features,
         getPosition: d => d.geometry.coordinates,
-        getRadius: 300,
+        getRadius: 15,
+        radiusUnits: 'pixels',
         getFillColor: [46, 204, 113, 180],
         getLineColor: [255, 255, 255],
         getLineWidth: 2,
+        lineWidthUnits: 'pixels',
         stroked: true,
         pickable: true
       })
@@ -227,11 +234,14 @@ function createLayers() {
         id: 'points',
         data: currentPointData.features,
         getPosition: d => d.geometry.coordinates,
-        getRadius: 200,
-        radiusUnits: 'meters',
+        getRadius: 6,
+        radiusUnits: 'pixels',
+        radiusMinPixels: 6,
+        radiusMaxPixels: 6,
         getFillColor: [233, 69, 96],
         getLineColor: [255, 255, 255],
         getLineWidth: 2,
+        lineWidthUnits: 'pixels',
         stroked: true,
         pickable: true,
         onClick: ({ object }) => {
@@ -301,20 +311,14 @@ function updateLayers() {
 }
 
 export function initMap() {
-  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
-
-  // Calculate zoom to fit bounds (approximate)
-  const latDiff = bounds[3] - bounds[1];
-  const lngDiff = bounds[2] - bounds[0];
-  const maxDiff = Math.max(latDiff, lngDiff);
-  const zoom = Math.floor(Math.log2(360 / maxDiff)) - 1;
+  const container = document.getElementById('map-deckgl');
 
   deck = new Deck({
-    parent: document.getElementById('map-deckgl'),
+    parent: container,
     initialViewState: {
-      longitude: center[0],
-      latitude: center[1],
-      zoom: zoom,
+      longitude: VIEW_CENTER[0],
+      latitude: VIEW_CENTER[1],
+      zoom: VIEW_ZOOM,
       pitch: 0,
       bearing: 0
     },

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "deck.gl": "^9.2.5",
     "leaflet": "^2.0.0-alpha.1",
     "maplibre-gl": "^4.7.1",

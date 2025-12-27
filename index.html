@@ -16,6 +16,7 @@
         <button class="tab" data-tab="maplibre">MapLibre GL JS</button>
         <button class="tab" data-tab="deckgl">Deck.gl</button>
       </div>
+      <button id="benchmark-btn" class="benchmark-btn">Run Benchmark</button>
     </header>
 
     <main class="main">
@@ -62,6 +63,14 @@
             <span class="stat-value" id="fps">--</span>
           </div>
           <div class="stat">
+            <span class="stat-label">Frame:</span>
+            <span class="stat-value"><span id="frame-time">--</span><span class="stat-unit">ms</span></span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Jitter:</span>
+            <span class="stat-value"><span id="jitter">--</span><span class="stat-unit">ms</span></span>
+          </div>
+          <div class="stat">
             <span class="stat-label">Features:</span>
             <span class="stat-value" id="feature-count">--</span>
           </div>
@@ -80,8 +89,14 @@
 
       <div class="map-container">
         <div class="fps-badge">
-          <div class="fps-label">FPS</div>
-          <div class="fps-value" id="fps-mobile">--</div>
+          <div class="fps-row">
+            <div class="fps-label">FPS</div>
+            <div class="fps-value" id="fps-mobile">--</div>
+          </div>
+          <div class="fps-row jitter-row">
+            <div class="fps-label">Jitter</div>
+            <div class="fps-value"><span id="jitter-mobile">--</span><span class="fps-unit">ms</span></div>
+          </div>
         </div>
         <div id="map-leaflet" class="map active"></div>
         <div id="map-openlayers" class="map"></div>
@@ -97,6 +112,39 @@
         <h3>Code Comparison</h3>
         <div class="code-panel">
           <pre id="code-snippet-modal">// Code appears here</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="benchmark-modal" id="benchmark-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content benchmark-content">
+        <button class="modal-close" id="benchmark-close">&times;</button>
+
+        <div class="benchmark-progress" id="benchmark-progress">
+          <h3>Running Benchmark</h3>
+          <div class="progress-info">
+            <span id="benchmark-library">Leaflet 2.0</span>
+            <span id="benchmark-points">1,000 points</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="benchmark-progress-fill"></div>
+          </div>
+          <p class="progress-status" id="benchmark-status">Test 1 of 16</p>
+          <button class="cancel-btn" id="benchmark-cancel-btn">Cancel</button>
+        </div>
+
+        <div class="benchmark-results" id="benchmark-results">
+          <h3>Benchmark Results</h3>
+          <div class="chart-container">
+            <canvas id="benchmark-chart"></canvas>
+          </div>
+          <div class="metric-toggle">
+            <button class="metric-btn active" data-metric="fps">FPS</button>
+            <button class="metric-btn" data-metric="frameTime">Frame Time</button>
+            <button class="metric-btn" data-metric="jitter">Jitter</button>
+          </div>
+          <button class="close-results-btn" id="close-results">Close</button>
         </div>
       </div>
     </div>

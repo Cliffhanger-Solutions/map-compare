@@ -1,6 +1,6 @@
 import { Map, TileLayer, CircleMarker, Polygon, Polyline, LayerGroup } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getAllData, getBounds } from '../data/fake-data.js';
+import { getAllData } from '../data/fake-data.js';
 
 // State
 let map = null;
@@ -270,18 +270,17 @@ function createPlaceholderLayers() {
   layers.cluster = new LayerGroup();
 }
 
+// Shared view configuration (Leaflet is the baseline with discrete zoom)
+const VIEW_CENTER = [40.7128, -74.0060]; // [lat, lng] for Leaflet
+const VIEW_ZOOM = 11;
+
 // Initialize map
 export function initMap() {
-  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
-
   // Create map - Leaflet uses [lat, lng] order
-  map = new Map('map-leaflet');
-
-  // Fit to bounds - Leaflet uses [[south, west], [north, east]] format
-  map.fitBounds([
-    [bounds[1], bounds[0]],  // [minLat, minLng] = southwest
-    [bounds[3], bounds[2]]   // [maxLat, maxLng] = northeast
-  ], { padding: [20, 20] });
+  map = new Map('map-leaflet', {
+    center: VIEW_CENTER,
+    zoom: VIEW_ZOOM
+  });
 
   // Add base tile layer
   new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

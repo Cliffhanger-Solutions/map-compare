@@ -8,11 +8,15 @@ import VectorSource from 'ol/source/Vector.js';
 import Cluster from 'ol/source/Cluster.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style.js';
-import { fromLonLat, transformExtent } from 'ol/proj.js';
+import { fromLonLat } from 'ol/proj.js';
 import Overlay from 'ol/Overlay.js';
 import 'ol/ol.css';
 
-import { getAllData, getBounds } from '../data/fake-data.js';
+import { getAllData } from '../data/fake-data.js';
+
+// Shared view configuration (matching Leaflet's discrete zoom)
+const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat] for fromLonLat
+const VIEW_ZOOM = 11;
 
 let map = null;
 let popup = null;
@@ -141,8 +145,6 @@ map.addLayer(clusterLayer);`
 };
 
 export function initMap() {
-  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
-
   // Create popup element
   createPopup();
 
@@ -241,7 +243,7 @@ export function initMap() {
     })
   });
 
-  // Create map
+  // Create map with fixed center and zoom (matching Leaflet)
   map = new Map({
     target: 'map-openlayers',
     layers: [
@@ -254,13 +256,12 @@ export function initMap() {
       layers.cluster,
       layers.points
     ],
-    view: new View(),
+    view: new View({
+      center: fromLonLat(VIEW_CENTER),
+      zoom: VIEW_ZOOM
+    }),
     overlays: [popupOverlay]
   });
-
-  // Fit to bounds after map is created
-  const extent = transformExtent(bounds, 'EPSG:4326', 'EPSG:3857');
-  map.getView().fit(extent, { padding: [20, 20, 20, 20] });
 
   // Add interactions
   addInteractions();
