@@ -1,13 +1,15 @@
 import * as maplibreModule from './maplibre/map.js';
 import * as openlayersModule from './openlayers/map.js';
 import * as leafletModule from './leaflet/map.js';
-import { getPoints, getCenter } from './data/fake-data.js';
+import * as deckglModule from './deckgl/map.js';
+import { getPoints, getAllData } from './data/fake-data.js';
 
 // Current active library
 let activeLib = 'leaflet';
 let maplibreMap = null;
 let openlayersMap = null;
 let leafletMap = null;
+let deckglMap = null;
 
 // Layer state
 const layerState = {
@@ -22,7 +24,9 @@ const layerState = {
 let isAnimating = false;
 let animationId = null;
 let basePoints = null; // Store original point positions
-const NYC_CENTER = getCenter();
+
+// Feature data for counts
+const featureData = getAllData();
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,16 +42,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initMaps() {
-  // Initialize all three maps
+  // Initialize all four maps
   maplibreMap = maplibreModule.initMap();
   openlayersMap = openlayersModule.initMap();
   leafletMap = leafletModule.initMap();
+  deckglMap = deckglModule.initMap();
 
-  // Store base points for animation
-  basePoints = getPoints(1000);
+  // Store base points for animation (must match getAllData count)
+  basePoints = featureData.points;
 
   // Update feature count
-  const count = maplibreModule.getFeatureCount();
+  updateFeatureCount();
+}
+
+// Update displayed feature count based on visible layers
+function updateFeatureCount() {
+  let count = 0;
+  if (layerState.points || layerState.cluster) {
+    count += featureData.points.features.length;
+  }
+  if (layerState.polygons) {
+    count += featureData.polygons.features.length;
+  }
+  if (layerState.lines) {
+    count += featureData.lines.features.length;
+  }
+  if (layerState.heatmap) {
+    // Heatmap uses points data, don't double count if points already counted
+    if (!layerState.points && !layerState.cluster) {
+      count += featureData.points.features.length;
+    }
+  }
   document.getElementById('feature-count').textContent = count.toLocaleString();
 }
 
@@ -56,6 +81,7 @@ function setupTabs() {
   const maplibreContainer = document.getElementById('map-maplibre');
   const openlayersContainer = document.getElementById('map-openlayers');
   const leafletContainer = document.getElementById('map-leaflet');
+  const deckglContainer = document.getElementById('map-deckgl');
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -69,6 +95,7 @@ function setupTabs() {
       maplibreContainer.classList.remove('active');
       openlayersContainer.classList.remove('active');
       leafletContainer.classList.remove('active');
+      deckglContainer.classList.remove('active');
 
       if (tabName === 'maplibre') {
         maplibreContainer.classList.add('active');
@@ -85,6 +112,10 @@ function setupTabs() {
         activeLib = 'leaflet';
         // Trigger resize to recalculate viewport after becoming visible
         setTimeout(() => leafletMap.invalidateSize(), 0);
+      } else if (tabName === 'deckgl') {
+        deckglContainer.classList.add('active');
+        activeLib = 'deckgl';
+        // Deck.gl handles resize automatically via ResizeObserver
       }
 
       // Update code snippet for current layer selection
@@ -110,10 +141,11 @@ function setupLayerControls() {
       const visible = e.target.checked;
       layerState[layerId] = visible;
 
-      // Update all three maps
+      // Update all four maps
       maplibreModule.setLayerVisibility(layerId, visible);
       openlayersModule.setLayerVisibility(layerId, visible);
       leafletModule.setLayerVisibility(layerId, visible);
+      deckglModule.setLayerVisibility(layerId, visible);
 
       // Special handling: clustering replaces regular points
       if (layerId === 'cluster') {
@@ -131,10 +163,14 @@ function setupLayerControls() {
         maplibreModule.setLayerVisibility('cluster', false);
         openlayersModule.setLayerVisibility('cluster', false);
         leafletModule.setLayerVisibility('cluster', false);
+        deckglModule.setLayerVisibility('cluster', false);
       }
 
       // Update code snippet
       updateCodeSnippet(layerId);
+
+      // Update feature count
+      updateFeatureCount();
     });
   });
 }
@@ -188,10 +224,11 @@ function startAnimation() {
       })
     };
 
-    // Update all three maps
+    // Update all four maps
     maplibreModule.updatePointPositions(animatedPoints);
     openlayersModule.updatePointPositions(animatedPoints);
     leafletModule.updatePointPositions(animatedPoints);
+    deckglModule.updatePointPositions(animatedPoints);
 
     animationId = requestAnimationFrame(animate);
   }
@@ -210,6 +247,7 @@ function stopAnimation() {
   maplibreModule.updatePointPositions(basePoints);
   openlayersModule.updatePointPositions(basePoints);
   leafletModule.updatePointPositions(basePoints);
+  deckglModule.updatePointPositions(basePoints);
 }
 
 function updateCodeSnippetForActiveLayer() {
@@ -233,6 +271,8 @@ function updateCodeSnippet(layerId) {
     module = openlayersModule;
   } else if (activeLib === 'leaflet') {
     module = leafletModule;
+  } else if (activeLib === 'deckgl') {
+    module = deckglModule;
   }
 
   if (module && module.codeSnippets[layerId]) {

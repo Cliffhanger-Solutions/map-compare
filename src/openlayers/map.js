@@ -8,11 +8,11 @@ import VectorSource from 'ol/source/Vector.js';
 import Cluster from 'ol/source/Cluster.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style.js';
-import { fromLonLat } from 'ol/proj.js';
+import { fromLonLat, transformExtent } from 'ol/proj.js';
 import Overlay from 'ol/Overlay.js';
 import 'ol/ol.css';
 
-import { getAllData, getCenter } from '../data/fake-data.js';
+import { getAllData, getBounds } from '../data/fake-data.js';
 
 let map = null;
 let popup = null;
@@ -141,7 +141,7 @@ map.addLayer(clusterLayer);`
 };
 
 export function initMap() {
-  const center = getCenter();
+  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
 
   // Create popup element
   createPopup();
@@ -254,12 +254,13 @@ export function initMap() {
       layers.cluster,
       layers.points
     ],
-    view: new View({
-      center: fromLonLat(center),
-      zoom: 11
-    }),
+    view: new View(),
     overlays: [popupOverlay]
   });
+
+  // Fit to bounds after map is created
+  const extent = transformExtent(bounds, 'EPSG:4326', 'EPSG:3857');
+  map.getView().fit(extent, { padding: [20, 20, 20, 20] });
 
   // Add interactions
   addInteractions();

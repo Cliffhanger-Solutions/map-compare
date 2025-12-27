@@ -1,6 +1,6 @@
 import { Map, TileLayer, CircleMarker, Polygon, Polyline, LayerGroup } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getAllData, getCenter } from '../data/fake-data.js';
+import { getAllData, getBounds } from '../data/fake-data.js';
 
 // State
 let map = null;
@@ -272,14 +272,16 @@ function createPlaceholderLayers() {
 
 // Initialize map
 export function initMap() {
-  const [lng, lat] = getCenter();
+  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
 
   // Create map - Leaflet uses [lat, lng] order
-  // NYC: lng: -74.0060, lat: 40.7128
-  map = new Map('map-leaflet', {
-    center: [lat, lng], // [40.7128, -74.0060]
-    zoom: 11
-  });
+  map = new Map('map-leaflet');
+
+  // Fit to bounds - Leaflet uses [[south, west], [north, east]] format
+  map.fitBounds([
+    [bounds[1], bounds[0]],  // [minLat, minLng] = southwest
+    [bounds[3], bounds[2]]   // [maxLat, maxLng] = northeast
+  ], { padding: [20, 20] });
 
   // Add base tile layer
   new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

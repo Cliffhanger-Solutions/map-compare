@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { getAllData, getCenter } from '../data/fake-data.js';
+import { getAllData, getBounds } from '../data/fake-data.js';
 
 let map = null;
 let popup = null;
@@ -119,7 +119,7 @@ map.addLayer({
 };
 
 export function initMap() {
-  const center = getCenter();
+  const bounds = getBounds(); // [minLng, minLat, maxLng, maxLat]
 
   map = new maplibregl.Map({
     container: 'map-maplibre',
@@ -141,8 +141,8 @@ export function initMap() {
         maxzoom: 19
       }]
     },
-    center: center,
-    zoom: 11
+    bounds: [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+    fitBoundsOptions: { padding: 20 }
   });
 
   popup = new maplibregl.Popup({

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A comparison demo app for evaluating three mapping libraries in order of progressive improvement: Leaflet 2.0 Alpha, OpenLayers, and MapLibre GL JS. Uses fake GeoJSON data to demonstrate layer types, interactivity, and performance differences between Canvas (Leaflet, OpenLayers) and WebGL (MapLibre) rendering approaches.
+A comparison demo app for evaluating four mapping libraries: Leaflet 2.0 Alpha, OpenLayers, MapLibre GL JS, and Deck.gl. Uses fake GeoJSON data to demonstrate layer types, interactivity, and performance differences between Canvas (Leaflet, OpenLayers) and WebGL (MapLibre, Deck.gl) rendering approaches.
 
 ## Commands
 
@@ -26,18 +26,22 @@ src/
 ├── leaflet/map.js       # Leaflet 2.0 Alpha implementation (Canvas)
 ├── openlayers/map.js    # OpenLayers implementation (Canvas)
 ├── maplibre/map.js      # MapLibre GL JS implementation (WebGL)
+├── deckgl/map.js        # Deck.gl implementation (WebGL)
 └── styles/main.css      # Dark theme UI
 ```
 
 **Key patterns:**
 - All map modules export: `initMap()`, `setLayerVisibility(layerId, visible)`, `updatePointPositions(geojson)`, `getMap()`, `getFeatureCount()`, `codeSnippets`
 - Layer IDs: `points`, `polygons`, `lines`, `heatmap`, `cluster`
-- Animation updates all three maps simultaneously via `updatePointPositions()` to stress-test rendering
+- Animation updates all four maps simultaneously via `updatePointPositions()` to stress-test rendering
+- Feature counts: 1000 points, 50 polygons, 30 lines (1080 total)
+- Feature count display is dynamic - updates based on visible layers
 
 **Tab Order** (progressive improvement):
 1. **Leaflet approach:** ES6 constructors (`new Map()`, `new CircleMarker()`, etc.), Canvas rendering, coordinate order is `[lat, lng]` (not `[lng, lat]`)
 2. **OpenLayers approach:** Class-based (VectorLayer, VectorSource, Style objects), Canvas 2D rendering
 3. **MapLibre approach:** Style-spec JSON, `map.addSource()` + `map.addLayer()`, GPU-accelerated WebGL
+4. **Deck.gl approach:** Layer-based composition, standalone with TileLayer basemap, GPU-accelerated WebGL, optimized for large datasets
 
 ## Mobile-Friendly UI
 
@@ -76,3 +80,11 @@ The app uses a **hybrid bottom sheet + floating FPS badge** design for mobile de
 - Coordinate transformation required: Leaflet uses `[lat, lng]`, GeoJSON uses `[lng, lat]`
 - Heatmap and clustering layers are placeholders (plugins not yet compatible with Leaflet 2.0 alpha)
 - Points layer implements efficient animation via `marker.setLatLng()` without recreating markers
+
+### Deck.gl
+- Uses standalone rendering with TileLayer + BitmapLayer for OSM basemap tiles (pure Deck.gl, no MapLibre overlay)
+- Layer types: ScatterplotLayer (points), GeoJsonLayer (polygons/lines), HeatmapLayer
+- Coordinate order: `[lng, lat]` (standard GeoJSON)
+- Animation updates via `deck.setProps({ layers: [...] })` - Deck.gl efficiently diffs layer data
+- Clustering is a placeholder (would require Supercluster library for proper implementation)
+- Click popups implemented via custom DOM overlay (Deck.gl has no built-in popup component)

@@ -2,7 +2,7 @@
 // Centered around NYC area: lat ~40.7, lng ~-74.0
 
 const NYC_CENTER = { lat: 40.7128, lng: -74.0060 };
-const SPREAD = 0.15; // ~10-15km spread
+const SPREAD = 0.12; // ~12km spread - tighter to fit viewport better
 
 function randomInRange(min, max) {
   return Math.random() * (max - min) + min;
@@ -136,12 +136,22 @@ export function getLines(count = 10) {
 export function getAllData() {
   return {
     points: getPoints(1000),
-    polygons: getPolygons(20),
-    lines: getLines(10)
+    polygons: getPolygons(50),
+    lines: getLines(30)
   };
 }
 
 // Get map center
 export function getCenter() {
   return [NYC_CENTER.lng, NYC_CENTER.lat];
+}
+
+// Get bounding box [minLng, minLat, maxLng, maxLat]
+export function getBounds() {
+  return [
+    NYC_CENTER.lng - SPREAD,  // minLng (west)
+    NYC_CENTER.lat - SPREAD,  // minLat (south)
+    NYC_CENTER.lng + SPREAD,  // maxLng (east)
+    NYC_CENTER.lat + SPREAD   // maxLat (north)
+  ];
 }
