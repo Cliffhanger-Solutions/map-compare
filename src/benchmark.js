@@ -11,6 +11,10 @@ export const LIBRARIES = ['leaflet', 'openlayers', 'maplibre', 'deckgl'];
 export const POINT_COUNTS = [500, 1000, 5000, 10000];
 const TEST_DURATION_MS = 5000;
 
+// Shared view configuration (matching all maps)
+const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat]
+const VIEW_ZOOM = 11;
+
 // Library display names
 export const LIBRARY_NAMES = {
   leaflet: 'Leaflet 2.0',
@@ -198,18 +202,30 @@ function switchToTab(lib) {
     container.classList.toggle('active', key === lib);
   });
 
-  // Trigger resize for the active map
+  // Trigger resize and reset view for the active map
   return new Promise(resolve => {
     setTimeout(() => {
       const map = MODULES[lib].getMap();
       if (lib === 'maplibre' && map) {
         map.resize();
+        // Reset view to ensure consistent bounds
+        map.jumpTo({ center: VIEW_CENTER, zoom: VIEW_ZOOM });
       } else if (lib === 'openlayers' && map) {
         map.updateSize();
       } else if (lib === 'leaflet' && map) {
         map.invalidateSize();
+      } else if (lib === 'deckgl' && map) {
+        // Deck.gl needs explicit view state reset
+        map.setProps({
+          initialViewState: {
+            longitude: VIEW_CENTER[0],
+            latitude: VIEW_CENTER[1],
+            zoom: VIEW_ZOOM,
+            pitch: 0,
+            bearing: 0
+          }
+        });
       }
-      // Deck.gl handles resize automatically
       resolve();
     }, 100); // Allow time for CSS transition
   });

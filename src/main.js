@@ -731,9 +731,9 @@ function getMetricValue(results, lib, count, metric) {
 
 function getYAxisLabel(metric) {
   switch (metric) {
-    case 'fps': return 'Frames Per Second';
-    case 'frameTime': return 'Frame Time (ms)';
-    case 'jitter': return 'Jitter (ms)';
+    case 'fps': return 'Frames Per Second (higher is better)';
+    case 'frameTime': return 'Frame Time in ms (lower is better)';
+    case 'jitter': return 'Jitter in ms (lower is better)';
     default: return 'Value';
   }
 }
