@@ -7,7 +7,7 @@ import { getAllData } from '../data/fake-data.js';
 
 // Shared view configuration (matching Leaflet's discrete zoom)
 const VIEW_CENTER = [-74.0060, 40.7128]; // [lng, lat]
-const VIEW_ZOOM = 11;
+const VIEW_ZOOM = 10; // WebGL libraries render 1 level deeper than Canvas at same zoom
 
 let deck = null;
 const data = getAllData();
