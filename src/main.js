@@ -614,9 +614,17 @@ function closeBenchmarkModal() {
   metricBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.metric === 'fps');
   });
+
+  // Reset view to leaderboard for next open
+  resetViewToLeaderboard();
 }
 
 function initBenchmarkChart(results, metric) {
+  // Render leaderboard first (shown by default)
+  renderLeaderboard(results);
+  setupViewToggle();
+  resetViewToLeaderboard();
+
   const ctx = document.getElementById('benchmark-chart').getContext('2d');
 
   // Destroy existing chart if any
@@ -736,4 +744,92 @@ function getYAxisLabel(metric) {
     case 'jitter': return 'Jitter in ms (lower is better)';
     default: return 'Value';
   }
+}
+
+// ==========================================
+// LEADERBOARD FEATURE
+// ==========================================
+
+function calculateLibraryScore(libResults) {
+  const weights = { fps: 0.6, jitter: 0.25, frameTime: 0.15 };
+  const countWeights = { 500: 1, 1000: 1.5, 5000: 2, 10000: 3 };
+
+  let totalScore = 0;
+  let totalWeight = 0;
+
+  POINT_COUNTS.forEach(count => {
+    const data = libResults[count];
+    const countWeight = countWeights[count];
+
+    // Normalize scores (0-100 scale)
+    const fpsScore = Math.min(data.avgFps / 60, 1) * 100;
+    const jitterScore = Math.max(0, 100 - data.jitter * 10);
+    const frameTimeScore = Math.max(0, 100 - Math.max(0, data.avgFrameTime - 16.67) * 1.2);
+
+    const weightedScore =
+      fpsScore * weights.fps +
+      jitterScore * weights.jitter +
+      frameTimeScore * weights.frameTime;
+
+    totalScore += weightedScore * countWeight;
+    totalWeight += countWeight;
+  });
+
+  return Math.round(totalScore / totalWeight);
+}
+
+function renderLeaderboard(results) {
+  const rankings = LIBRARIES
+    .map(lib => ({
+      lib,
+      score: calculateLibraryScore(results[lib]),
+      avgFps: Math.round(POINT_COUNTS.reduce((s, c) => s + results[lib][c].avgFps, 0) / POINT_COUNTS.length),
+      avgJitter: (POINT_COUNTS.reduce((s, c) => s + results[lib][c].jitter, 0) / POINT_COUNTS.length).toFixed(1)
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}', '']; // Gold, Silver, Bronze
+
+  document.getElementById('leaderboard-cards').innerHTML = rankings.map((item, i) => `
+    <div class="leaderboard-card" style="--lib-color: ${LIBRARY_COLORS[item.lib]}">
+      <div class="rank-badge rank-${i + 1}">
+        ${medals[i] ? `<span class="medal">${medals[i]}</span>` : ''}
+        <span class="rank-number">#${i + 1}</span>
+      </div>
+      <div class="card-content">
+        <div class="lib-name">${LIBRARY_NAMES[item.lib]}</div>
+        <div class="lib-score">Score: ${item.score}</div>
+        <div class="lib-metrics">
+          <span><strong>${item.avgFps}</strong> avg FPS</span>
+          <span><strong>${item.avgJitter}</strong>ms jitter</span>
+        </div>
+      </div>
+      <div class="performance-bar" style="width: ${item.score}%"></div>
+    </div>
+  `).join('');
+}
+
+let viewToggleInitialized = false;
+
+function setupViewToggle() {
+  if (viewToggleInitialized) return;
+  viewToggleInitialized = true;
+
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const view = btn.dataset.view;
+      document.getElementById('leaderboard-view').style.display = view === 'leaderboard' ? 'block' : 'none';
+      document.getElementById('charts-view').style.display = view === 'charts' ? 'block' : 'none';
+    });
+  });
+}
+
+function resetViewToLeaderboard() {
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === 'leaderboard');
+  });
+  document.getElementById('leaderboard-view').style.display = 'block';
+  document.getElementById('charts-view').style.display = 'none';
 }

@@ -15,6 +15,8 @@ npm run build            # Production build to dist/
 npm run preview          # Preview production build
 ```
 
+**IMPORTANT:** Only use port 3000. NEVER start a second dev server - if port 3000 is in use, the dev server is already running. Port 3001+ will kick out other services.
+
 **Mobile testing:** Use `npm run dev -- --host` to expose the server to your network (0.0.0.0). Access from mobile device at `http://[your-ip]:[port]/`
 
 ## Architecture

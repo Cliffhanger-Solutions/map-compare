@@ -136,14 +136,30 @@
 
         <div class="benchmark-results" id="benchmark-results">
           <h3>Benchmark Results</h3>
-          <div class="chart-container">
-            <canvas id="benchmark-chart"></canvas>
+
+          <!-- View Toggle -->
+          <div class="view-toggle">
+            <button class="view-btn active" data-view="leaderboard">Leaderboard</button>
+            <button class="view-btn" data-view="charts">Charts</button>
           </div>
-          <div class="metric-toggle">
-            <button class="metric-btn active" data-metric="fps">FPS</button>
-            <button class="metric-btn" data-metric="frameTime">Frame Time</button>
-            <button class="metric-btn" data-metric="jitter">Jitter</button>
+
+          <!-- Leaderboard View (shown by default) -->
+          <div class="leaderboard-view" id="leaderboard-view">
+            <div class="leaderboard-cards" id="leaderboard-cards"></div>
           </div>
+
+          <!-- Charts View (hidden by default) -->
+          <div class="charts-view" id="charts-view" style="display: none;">
+            <div class="chart-container">
+              <canvas id="benchmark-chart"></canvas>
+            </div>
+            <div class="metric-toggle">
+              <button class="metric-btn active" data-metric="fps">FPS</button>
+              <button class="metric-btn" data-metric="frameTime">Frame Time</button>
+              <button class="metric-btn" data-metric="jitter">Jitter</button>
+            </div>
+          </div>
+
           <button class="close-results-btn" id="close-results">Close</button>
         </div>
       </div>
