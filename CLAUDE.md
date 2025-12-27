@@ -31,11 +31,11 @@ src/
 ```
 
 **Key patterns:**
-- All map modules export: `initMap()`, `setLayerVisibility(layerId, visible)`, `updatePointPositions(geojson)`, `getMap()`, `getFeatureCount()`, `codeSnippets`
+- All map modules export: `initMap()`, `setLayerVisibility(layerId, visible)`, `updatePointPositions(geojson)`, `setPointsData(geojson)`, `getMap()`, `getFeatureCount()`, `codeSnippets`
 - Layer IDs: `points`, `polygons`, `lines`, `heatmap`, `cluster`
 - Animation updates all four maps simultaneously via `updatePointPositions()` to stress-test rendering
-- Feature counts: 1000 points, 50 polygons, 30 lines (1080 total)
-- Feature count display is dynamic - updates based on visible layers
+- Dynamic point count selector: 500, 1K, 5K, 10K (default 1K) - updates via `setPointsData()`
+- Feature count display is dynamic - updates based on visible layers and point count
 
 **Tab Order** (progressive improvement):
 1. **Leaflet approach:** ES6 constructors (`new Map()`, `new CircleMarker()`, etc.), Canvas rendering, coordinate order is `[lat, lng]` (not `[lng, lat]`)

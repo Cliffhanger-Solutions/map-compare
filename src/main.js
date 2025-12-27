@@ -25,14 +25,16 @@ let isAnimating = false;
 let animationId = null;
 let basePoints = null; // Store original point positions
 
-// Feature data for counts
-const featureData = getAllData();
+// Feature data for counts (mutable for dynamic point count)
+let featureData = getAllData();
+let currentPointCount = 1000;
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   initMaps();
   setupTabs();
   setupLayerControls();
+  setupPointCountPills();
   setupAnimationButton();
   setupPerformanceMonitor();
   setupMobileControls();
@@ -170,6 +172,45 @@ function setupLayerControls() {
       updateCodeSnippet(layerId);
 
       // Update feature count
+      updateFeatureCount();
+    });
+  });
+}
+
+function setupPointCountPills() {
+  const pills = document.querySelectorAll('.pill');
+  const pointCountLabel = document.getElementById('point-count-label');
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const count = parseInt(pill.dataset.count, 10);
+      if (count === currentPointCount) return;
+
+      // Stop animation if running
+      if (isAnimating) {
+        stopAnimation();
+        document.getElementById('animate-btn').textContent = 'Start Animation';
+        document.getElementById('animate-btn').classList.remove('active');
+      }
+
+      // Update active pill
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+
+      // Generate new points
+      currentPointCount = count;
+      const newPoints = getPoints(count);
+      featureData.points = newPoints;
+      basePoints = newPoints;
+
+      // Update all maps
+      maplibreModule.setPointsData(newPoints);
+      openlayersModule.setPointsData(newPoints);
+      leafletModule.setPointsData(newPoints);
+      deckglModule.setPointsData(newPoints);
+
+      // Update UI
+      pointCountLabel.textContent = count.toLocaleString();
       updateFeatureCount();
     });
   });

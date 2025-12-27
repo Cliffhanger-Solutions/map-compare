@@ -366,3 +366,10 @@ export function updatePointPositions(animatedData) {
   currentPointData = animatedData;
   updateLayers();
 }
+
+// Update points data (for dynamic point count)
+export function setPointsData(pointsGeoJSON) {
+  data.points = pointsGeoJSON;
+  currentPointData = pointsGeoJSON;
+  updateLayers();
+}

@@ -344,3 +344,35 @@ export function updatePointPositions(animatedData) {
     }
   });
 }
+
+// Update points data (for dynamic point count)
+export function setPointsData(pointsGeoJSON) {
+  if (!map || !layers.points) return;
+
+  data.points = pointsGeoJSON;
+
+  // Clear existing markers
+  layers.points.clearLayers();
+  pointMarkers = [];
+
+  // Recreate markers with new data
+  pointsGeoJSON.features.forEach(feature => {
+    const [lng, lat] = feature.geometry.coordinates;
+    const marker = new CircleMarker([lat, lng], {
+      radius: 6,
+      fillColor: '#e94560',
+      fillOpacity: 1,
+      color: '#fff',
+      weight: 2
+    });
+
+    marker.bindPopup(`
+      <strong>${feature.properties.name}</strong><br>
+      Category: ${feature.properties.category}<br>
+      Magnitude: ${feature.properties.magnitude.toFixed(1)}
+    `);
+
+    marker.addTo(layers.points);
+    pointMarkers.push({ marker, feature });
+  });
+}

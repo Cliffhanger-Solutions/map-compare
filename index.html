@@ -46,8 +46,14 @@
         </label>
 
         <h3>Stress Test</h3>
+        <div class="point-count-pills">
+          <button class="pill" data-count="500">500</button>
+          <button class="pill active" data-count="1000">1K</button>
+          <button class="pill" data-count="5000">5K</button>
+          <button class="pill" data-count="10000">10K</button>
+        </div>
         <button class="animate-btn" id="animate-btn">Start Animation</button>
-        <p class="animate-hint">Animates 1000 points to stress test rendering</p>
+        <p class="animate-hint" id="animate-hint">Animates <span id="point-count-label">1,000</span> points</p>
 
         <h3>Performance</h3>
         <div class="perf-stats">

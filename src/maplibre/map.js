@@ -496,3 +496,20 @@ export function updatePointPositions(animatedData) {
     clusteredSource.setData(animatedData);
   }
 }
+
+// Update points data (for dynamic point count)
+export function setPointsData(pointsGeoJSON) {
+  if (!map || !map.isStyleLoaded()) return;
+
+  data.points = pointsGeoJSON;
+
+  const source = map.getSource('points');
+  const clusteredSource = map.getSource('points-clustered');
+
+  if (source) {
+    source.setData(pointsGeoJSON);
+  }
+  if (clusteredSource) {
+    clusteredSource.setData(pointsGeoJSON);
+  }
+}

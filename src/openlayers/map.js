@@ -432,3 +432,18 @@ export function updatePointPositions(animatedData) {
     clusterSource.refresh();
   }
 }
+
+// Update points data (for dynamic point count)
+export function setPointsData(pointsGeoJSON) {
+  if (!pointsSource) return;
+
+  data.points = pointsGeoJSON;
+
+  const newFeatures = format.readFeatures(pointsGeoJSON, { featureProjection: 'EPSG:3857' });
+  pointsSource.clear();
+  pointsSource.addFeatures(newFeatures);
+
+  if (clusterSource) {
+    clusterSource.refresh();
+  }
+}

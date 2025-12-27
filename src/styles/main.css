@@ -138,6 +138,38 @@ html, body {
   50% { opacity: 0.7; }
 }
 
+/* Point count pill buttons */
+.point-count-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.pill {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid #0f3460;
+  background: #0f3460;
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.pill:hover {
+  background: #1a4a7a;
+  color: #fff;
+  border-color: #1a4a7a;
+}
+
+.pill.active {
+  background: #e94560;
+  color: #fff;
+  border-color: #e94560;
+}
+
 .animate-hint {
   font-size: 0.75rem;
   color: #666;
