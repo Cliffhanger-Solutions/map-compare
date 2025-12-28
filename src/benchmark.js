@@ -111,9 +111,10 @@ function createAnimatedPoints(basePoints, elapsed) {
   };
 }
 
-// Calculate metrics from render times with IQR outlier detection
-function calculateMetrics(renderTimes) {
-  if (renderTimes.length < 10) {
+// Calculate metrics from frame times with IQR outlier detection
+// Frame time = time between consecutive rAF callbacks = inverse of actual FPS
+function calculateMetrics(frameTimes) {
+  if (frameTimes.length < 10) {
     return {
       avgFps: 0,
       minFps: 0,
@@ -125,7 +126,7 @@ function calculateMetrics(renderTimes) {
   }
 
   // Sort for percentile calculations
-  const sorted = [...renderTimes].sort((a, b) => a - b);
+  const sorted = [...frameTimes].sort((a, b) => a - b);
   const len = sorted.length;
 
   // IQR for outlier detection
@@ -138,12 +139,12 @@ function calculateMetrics(renderTimes) {
   const upperBound = q3 + 1.5 * iqr;
 
   // Filter outliers
-  const filtered = renderTimes.filter(t => t >= lowerBound && t <= upperBound);
-  const outliersExcluded = renderTimes.length - filtered.length;
+  const filtered = frameTimes.filter(t => t >= lowerBound && t <= upperBound);
+  const outliersExcluded = frameTimes.length - filtered.length;
 
   if (filtered.length < 10) {
     // If too many outliers, fall back to original data
-    filtered.push(...renderTimes);
+    filtered.push(...frameTimes);
   }
 
   // Calculate stats on filtered data
@@ -176,9 +177,12 @@ function calculateMetrics(renderTimes) {
 }
 
 // Unified animation + measurement loop
+// NOTE: We measure FRAME TIME (time between rAF callbacks), not API call time.
+// This is critical for WebGL libraries where the actual GPU work is async.
+// Frame time = how fast the system can produce frames = true throughput.
 function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal }) {
   return new Promise((resolve, reject) => {
-    const renderTimes = [];
+    const frameTimes = [];
     let animationId = null;
     const startTime = performance.now();
     const animationStart = performance.now();
@@ -208,16 +212,16 @@ function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal })
       }
 
       const now = performance.now();
-      const frameGap = now - lastFrameTime;
+      const frameTime = now - lastFrameTime;
       lastFrameTime = now;
 
       // Track max frame gap for throttle detection (after warmup)
-      if (!isWarmup && frameGap > maxFrameGap) {
-        maxFrameGap = frameGap;
+      if (!isWarmup && frameTime > maxFrameGap) {
+        maxFrameGap = frameTime;
       }
 
       // Count throttle events
-      if (frameGap > THROTTLE_THRESHOLD_MS) {
+      if (frameTime > THROTTLE_THRESHOLD_MS) {
         throttleWarnings++;
       }
 
@@ -232,15 +236,14 @@ function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal })
       // Create animated points
       const animatedPoints = createAnimatedPoints(basePoints, elapsed);
 
-      // Measure the actual render time
-      const renderStart = performance.now();
+      // Update the map (async for WebGL, sync for Canvas)
       MODULES[lib].updatePointPositions(animatedPoints);
-      const renderEnd = performance.now();
-      const renderTime = renderEnd - renderStart;
 
-      // Only record if past warmup phase and valid
-      if (!isWarmup && renderTime > 0 && renderTime < 500) {
-        renderTimes.push(renderTime);
+      // Record frame time (time since last frame completed)
+      // This measures actual throughput: how fast frames are being produced
+      // Valid range: 1ms (1000fps) to 500ms (2fps) - excludes outliers
+      if (!isWarmup && frameTime > 1 && frameTime < 500) {
+        frameTimes.push(frameTime);
       }
 
       // Check if measurement phase complete
@@ -248,8 +251,8 @@ function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal })
         animationId = requestAnimationFrame(animate);
       } else {
         cleanup();
-        // Calculate metrics from render times
-        const metrics = calculateMetrics(renderTimes);
+        // Calculate metrics from frame times
+        const metrics = calculateMetrics(frameTimes);
         resolve({
           ...metrics,
           maxFrameGap: Math.round(maxFrameGap),
