@@ -4,6 +4,28 @@
 const NYC_CENTER = { lat: 40.7128, lng: -74.0060 };
 const SPREAD = 0.12; // ~12km spread - tighter to fit viewport better
 
+// Mulberry32 seeded PRNG - fast, good distribution
+function mulberry32(seed) {
+  return function() {
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Create random functions that use either seeded or Math.random
+function createRandomFunctions(seed = null) {
+  const random = seed !== null ? mulberry32(seed) : Math.random;
+
+  return {
+    random,
+    randomInRange: (min, max) => random() * (max - min) + min,
+    randomInt: (min, max) => Math.floor(random() * (max - min) + min),
+    randomChoice: (arr) => arr[Math.floor(random() * arr.length)]
+  };
+}
+
 function randomInRange(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -14,12 +36,16 @@ function randomColor() {
 }
 
 // Generate random points (for clustering and heatmap)
-export function getPoints(count = 1000) {
+// Optional seed parameter for reproducible benchmark data
+export function getPoints(count = 1000, seed = null) {
+  const { randomInRange: rndRange, randomChoice } = createRandomFunctions(seed);
+  const categories = ['restaurant', 'shop', 'park', 'office'];
+
   const features = [];
   for (let i = 0; i < count; i++) {
-    const lng = NYC_CENTER.lng + randomInRange(-SPREAD, SPREAD);
-    const lat = NYC_CENTER.lat + randomInRange(-SPREAD, SPREAD);
-    const magnitude = randomInRange(1, 10); // For heatmap weight
+    const lng = NYC_CENTER.lng + rndRange(-SPREAD, SPREAD);
+    const lat = NYC_CENTER.lat + rndRange(-SPREAD, SPREAD);
+    const magnitude = rndRange(1, 10); // For heatmap weight
 
     features.push({
       type: 'Feature',
@@ -27,7 +53,7 @@ export function getPoints(count = 1000) {
         id: i,
         name: `Point ${i}`,
         magnitude,
-        category: ['restaurant', 'shop', 'park', 'office'][Math.floor(Math.random() * 4)]
+        category: randomChoice(categories)
       },
       geometry: {
         type: 'Point',

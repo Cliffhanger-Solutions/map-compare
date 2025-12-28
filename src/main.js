@@ -572,12 +572,12 @@ function setupBenchmark() {
   });
 }
 
-function updateProgress({ library, pointCount, testNumber, totalTests, progress }) {
+function updateProgress({ library, pointCount, iteration, totalIterations, testNumber, totalTests, progress }) {
   document.getElementById('benchmark-library').textContent = library;
   document.getElementById('benchmark-points').textContent =
     pointCount.toLocaleString() + ' points';
   document.getElementById('benchmark-status').textContent =
-    `Test ${testNumber} of ${totalTests}`;
+    `Iteration ${iteration}/${totalIterations} - Test ${testNumber} of ${totalTests}`;
   document.getElementById('benchmark-progress-fill').style.width = `${progress}%`;
 }
 
@@ -674,14 +674,26 @@ function initBenchmarkChart(results, metric) {
             label: (context) => {
               const lib = LIBRARIES[context.datasetIndex];
               const count = POINT_COUNTS[context.dataIndex];
-              const data = results[lib][count];
+              const data = results[lib][count].combined;
 
               if (metric === 'fps') {
-                return `${context.dataset.label}: ${data.avgFps} FPS (min: ${data.minFps}, max: ${data.maxFps})`;
+                const iterations = data.iterationDetails;
+                const fpsRange = iterations.map(i => i.medianFps || i.avgFps);
+                return [
+                  `${context.dataset.label}: ${data.medianFps} FPS (median)`,
+                  `  Range: ${Math.min(...fpsRange)}-${Math.max(...fpsRange)} FPS`,
+                  `  Min/Max: ${data.minFps}/${data.maxFps} FPS`
+                ];
               } else if (metric === 'frameTime') {
-                return `${context.dataset.label}: ${data.avgFrameTime}ms`;
+                return [
+                  `${context.dataset.label}: ${data.avgFrameTime}ms`,
+                  data.totalOutliersExcluded > 0 ? `  ${data.totalOutliersExcluded} outliers excluded` : null
+                ].filter(Boolean);
               } else {
-                return `${context.dataset.label}: ${data.jitter}ms`;
+                return [
+                  `${context.dataset.label}: ${data.jitter}ms (median)`,
+                  data.totalOutliersExcluded > 0 ? `  ${data.totalOutliersExcluded} outliers excluded` : null
+                ].filter(Boolean);
               }
             }
           }
@@ -728,12 +740,12 @@ function updateChartMetric(results, metric) {
 }
 
 function getMetricValue(results, lib, count, metric) {
-  const data = results[lib][count];
+  const data = results[lib][count].combined;
   switch (metric) {
-    case 'fps': return data.avgFps;
+    case 'fps': return data.medianFps;
     case 'frameTime': return data.avgFrameTime;
     case 'jitter': return data.jitter;
-    default: return data.avgFps;
+    default: return data.medianFps;
   }
 }
 
@@ -758,11 +770,11 @@ function calculateLibraryScore(libResults) {
   let totalWeight = 0;
 
   POINT_COUNTS.forEach(count => {
-    const data = libResults[count];
+    const data = libResults[count].combined;
     const countWeight = countWeights[count];
 
-    // Normalize scores (0-100 scale)
-    const fpsScore = Math.min(data.avgFps / 60, 1) * 100;
+    // Normalize scores (0-100 scale) - use medianFps for more stable scoring
+    const fpsScore = Math.min(data.medianFps / 60, 1) * 100;
     const jitterScore = Math.max(0, 100 - data.jitter * 10);
     const frameTimeScore = Math.max(0, 100 - Math.max(0, data.avgFrameTime - 16.67) * 1.2);
 
@@ -783,8 +795,8 @@ function renderLeaderboard(results) {
     .map(lib => ({
       lib,
       score: calculateLibraryScore(results[lib]),
-      avgFps: Math.round(POINT_COUNTS.reduce((s, c) => s + results[lib][c].avgFps, 0) / POINT_COUNTS.length),
-      avgJitter: (POINT_COUNTS.reduce((s, c) => s + results[lib][c].jitter, 0) / POINT_COUNTS.length).toFixed(1)
+      avgFps: Math.round(POINT_COUNTS.reduce((s, c) => s + results[lib][c].combined.medianFps, 0) / POINT_COUNTS.length),
+      avgJitter: (POINT_COUNTS.reduce((s, c) => s + results[lib][c].combined.jitter, 0) / POINT_COUNTS.length).toFixed(1)
     }))
     .sort((a, b) => b.score - a.score);
 
