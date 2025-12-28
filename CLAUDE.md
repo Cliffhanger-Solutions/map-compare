@@ -24,6 +24,8 @@ npm run preview          # Preview production build
 ```
 src/
 ├── main.js              # Entry point: tab switching, layer controls, animation loop
+├── benchmark.js         # Performance benchmark system
+├── benchmark-ui.js      # Benchmark results UI and charts
 ├── data/fake-data.js    # GeoJSON generators: getPoints(), getPolygons(), getLines()
 ├── leaflet/map.js       # Leaflet 2.0 Alpha implementation (Canvas)
 ├── openlayers/map.js    # OpenLayers implementation (Canvas)
@@ -90,3 +92,30 @@ The app uses a **hybrid bottom sheet + floating FPS badge** design for mobile de
 - Animation updates via `deck.setProps({ layers: [...] })` - Deck.gl efficiently diffs layer data
 - Clustering is a placeholder (would require Supercluster library for proper implementation)
 - Click popups implemented via custom DOM overlay (Deck.gl has no built-in popup component)
+
+## Benchmark System
+
+The benchmark (`src/benchmark.js`) provides automated performance comparison across all four libraries.
+
+### Methodology
+- **Frame time measurement:** Measures time between consecutive `requestAnimationFrame` callbacks (not API call time)
+- This is critical because WebGL libraries render asynchronously on the GPU - measuring `updatePointPositions()` call time would show near-zero for Deck.gl/MapLibre
+- Frame time = actual throughput = inverse of real FPS
+
+### Configuration
+- **Point counts:** 500, 1K, 5K, 10K
+- **Warmup:** 2 seconds (discarded)
+- **Test duration:** 10 seconds per configuration
+- **Iterations:** 3 runs per library/count combination
+- **Test order:** Randomized each iteration to reduce bias
+
+### Metrics
+- **Median FPS:** Primary metric (robust to outliers)
+- **Jitter:** Standard deviation of frame times (consistency measure)
+- **IQR outlier detection:** Excludes frame times outside 1.5× interquartile range
+- **Throttle detection:** Warns if tab was backgrounded during test
+
+### Zoom Levels
+Canvas and WebGL maps use different zoom levels to show equivalent visual density:
+- **Canvas (Leaflet, OpenLayers):** Zoom 11
+- **WebGL (MapLibre, Deck.gl):** Zoom 10
