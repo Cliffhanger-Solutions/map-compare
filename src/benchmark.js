@@ -87,28 +87,52 @@ function generateTestOrder() {
   return tests;
 }
 
-// Create animated points from base points
-function createAnimatedPoints(basePoints, elapsed) {
-  return {
-    type: 'FeatureCollection',
-    features: basePoints.features.map((feature, i) => {
-      const [baseLng, baseLat] = feature.geometry.coordinates;
-      const phase = i * 0.1;
-      const speed = 0.5 + (i % 5) * 0.2;
-      const radius = 0.002 + (i % 10) * 0.0005;
+// Animation buffer cache to avoid GC pressure during benchmarks
+// Key: point count, Value: { baseCoords, animatedPoints }
+const animationBuffers = new Map();
 
-      return {
-        ...feature,
+// Pre-allocate animation buffer for a given point set
+function getAnimationBuffer(basePoints) {
+  const count = basePoints.features.length;
+
+  if (!animationBuffers.has(count)) {
+    // Cache base coordinates and create reusable GeoJSON structure
+    const baseCoords = basePoints.features.map(f => [...f.geometry.coordinates]);
+    const animatedPoints = {
+      type: 'FeatureCollection',
+      features: basePoints.features.map((feature, i) => ({
+        type: 'Feature',
+        properties: feature.properties,
         geometry: {
           type: 'Point',
-          coordinates: [
-            baseLng + Math.cos(elapsed * speed + phase) * radius,
-            baseLat + Math.sin(elapsed * speed + phase) * radius
-          ]
+          coordinates: [baseCoords[i][0], baseCoords[i][1]] // Will be mutated in place
         }
-      };
-    })
-  };
+      }))
+    };
+    animationBuffers.set(count, { baseCoords, animatedPoints });
+  }
+
+  return animationBuffers.get(count);
+}
+
+// Update animated points in place (no allocations per frame)
+function updateAnimatedPoints(basePoints, elapsed) {
+  const { baseCoords, animatedPoints } = getAnimationBuffer(basePoints);
+  const features = animatedPoints.features;
+
+  for (let i = 0; i < features.length; i++) {
+    const [baseLng, baseLat] = baseCoords[i];
+    const phase = i * 0.1;
+    const speed = 0.5 + (i % 5) * 0.2;
+    const radius = 0.002 + (i % 10) * 0.0005;
+
+    // Mutate coordinates in place - no new object allocation
+    const coords = features[i].geometry.coordinates;
+    coords[0] = baseLng + Math.cos(elapsed * speed + phase) * radius;
+    coords[1] = baseLat + Math.sin(elapsed * speed + phase) * radius;
+  }
+
+  return animatedPoints;
 }
 
 // Calculate metrics from frame times with IQR outlier detection
@@ -139,12 +163,12 @@ function calculateMetrics(frameTimes) {
   const upperBound = q3 + 1.5 * iqr;
 
   // Filter outliers
-  const filtered = frameTimes.filter(t => t >= lowerBound && t <= upperBound);
+  let filtered = frameTimes.filter(t => t >= lowerBound && t <= upperBound);
   const outliersExcluded = frameTimes.length - filtered.length;
 
   if (filtered.length < 10) {
-    // If too many outliers, fall back to original data
-    filtered.push(...frameTimes);
+    // If too many outliers, fall back to original data (replace, don't append)
+    filtered = [...frameTimes];
   }
 
   // Calculate stats on filtered data
@@ -160,9 +184,12 @@ function calculateMetrics(frameTimes) {
   const variance = filtered.reduce((acc, t) => acc + Math.pow(t - mean, 2), 0) / filtered.length;
   const jitter = Math.sqrt(variance);
 
-  // Calculate median
+  // Calculate median (average two middle values for even-length arrays)
   const sortedFiltered = [...filtered].sort((a, b) => a - b);
-  const medianFrameTime = sortedFiltered[Math.floor(sortedFiltered.length / 2)];
+  const mid = sortedFiltered.length / 2;
+  const medianFrameTime = sortedFiltered.length % 2 === 0
+    ? (sortedFiltered[mid - 1] + sortedFiltered[mid]) / 2
+    : sortedFiltered[Math.floor(mid)];
   const medianFps = Math.round(1000 / medianFrameTime);
 
   return {
@@ -220,8 +247,8 @@ function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal })
         maxFrameGap = frameTime;
       }
 
-      // Count throttle events
-      if (frameTime > THROTTLE_THRESHOLD_MS) {
+      // Count throttle events (only after warmup to match maxFrameGap tracking)
+      if (!isWarmup && frameTime > THROTTLE_THRESHOLD_MS) {
         throttleWarnings++;
       }
 
@@ -233,16 +260,16 @@ function runMeasuredAnimation(lib, basePoints, { warmupMs, durationMs, signal })
       // Calculate elapsed time for animation
       const elapsed = (now - animationStart) / 1000;
 
-      // Create animated points
-      const animatedPoints = createAnimatedPoints(basePoints, elapsed);
+      // Update animated points in place (zero allocations per frame)
+      const animatedPoints = updateAnimatedPoints(basePoints, elapsed);
 
       // Update the map (async for WebGL, sync for Canvas)
       MODULES[lib].updatePointPositions(animatedPoints);
 
-      // Record frame time (time since last frame completed)
-      // This measures actual throughput: how fast frames are being produced
-      // Valid range: 1ms (1000fps) to 500ms (2fps) - excludes outliers
-      if (!isWarmup && frameTime > 1 && frameTime < 500) {
+      // Record frame time (interval between consecutive rAF callbacks)
+      // This captures true throughput: includes previous frame's render work + compositor time
+      // Valid range: 1ms (1000fps) to 200ms (5fps) - pre-filters extreme stalls before IQR
+      if (!isWarmup && frameTime > 1 && frameTime < 200) {
         frameTimes.push(frameTime);
       }
 
@@ -286,6 +313,7 @@ function switchToTab(lib) {
   });
 
   // Trigger resize and reset view for the active map
+  // Allow 250ms for WebGL context initialization and resize
   return new Promise(resolve => {
     setTimeout(() => {
       const map = MODULES[lib].getMap();
@@ -313,7 +341,7 @@ function switchToTab(lib) {
         map.redraw(true);
       }
       resolve();
-    }, 100);
+    }, 250);
   });
 }
 
@@ -358,12 +386,15 @@ function calculateCombinedStats(results) {
 
       const medianIndex = Math.floor(sortedFps.length / 2);
 
-      // Calculate FPS IQR
+      // Calculate FPS IQR (or range for small sample sizes)
       let fpsIqr = 0;
       if (sortedFps.length >= 4) {
         const q1 = sortedFps[Math.floor(sortedFps.length * 0.25)];
         const q3 = sortedFps[Math.floor(sortedFps.length * 0.75)];
         fpsIqr = q3 - q1;
+      } else if (sortedFps.length >= 2) {
+        // For small samples (e.g., 3 iterations), use range as variability measure
+        fpsIqr = sortedFps[sortedFps.length - 1] - sortedFps[0];
       }
 
       results[lib][count].combined = {
@@ -441,8 +472,8 @@ export async function runBenchmark(onProgress) {
         const basePoints = pointDataCache[count];
         setPointCountForLib(lib, basePoints);
 
-        // Allow time for rendering to stabilize
-        await delay(300);
+        // Allow time for rendering to stabilize (500ms for large buffer uploads on WebGL)
+        await delay(500);
 
         // Run measured animation with warmup
         const metrics = await runMeasuredAnimation(lib, basePoints, {
@@ -504,4 +535,5 @@ export function resetBenchmark() {
   benchmarkState = 'idle';
   abortController = null;
   benchmarkResults = {};
+  animationBuffers.clear(); // Free animation buffer memory
 }

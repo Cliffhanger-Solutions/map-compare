@@ -39,7 +39,22 @@ Access from your mobile device at `http://[your-ip]:3000`
 | MapLibre GL JS | WebGL | Style-spec JSON |
 | Deck.gl | WebGL | Layer composition |
 
-## Benchmark
+## Benchmark Results
+
+WebGL libraries (MapLibre, Deck.gl) consistently outperform Canvas libraries (Leaflet, OpenLayers), especially at higher point counts and on constrained devices.
+
+![Benchmark Results - M3 Max](docs/benchmark-m3-max.png)
+
+| Rank | Library | Score | Avg FPS | Jitter | Rendering |
+|------|---------|-------|---------|--------|-----------|
+| 🥇 | MapLibre GL | 100 | 120 | 0.2ms | WebGL |
+| 🥈 | Deck.gl | 97 | 120 | 1.0ms | WebGL |
+| 🥉 | Leaflet 2.0 | 80 | 80 | 0.9ms | Canvas |
+| 4 | OpenLayers | 69 | 74 | 1.3ms | Canvas |
+
+*Results from M3 Max MacBook Pro. See [CLAUDE.md](CLAUDE.md#benchmark-results-by-device) for results across different devices.*
+
+### Methodology
 
 The built-in benchmark measures actual frame time (not API call time) to accurately compare Canvas vs WebGL performance:
 

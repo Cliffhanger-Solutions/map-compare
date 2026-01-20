@@ -19,6 +19,11 @@ npm run preview          # Preview production build
 
 **Mobile testing:** Use `npm run dev -- --host` to expose the server to your network (0.0.0.0). Access from mobile device at `http://[your-ip]:[port]/`
 
+**Restart with network access:** To stop the current server and restart with network exposure:
+```bash
+lsof -ti:3000 | xargs kill -9 2>/dev/null; sleep 1; npm run dev -- --host
+```
+
 ## Architecture
 
 ```
@@ -119,3 +124,51 @@ The benchmark (`src/benchmark.js`) provides automated performance comparison acr
 Canvas and WebGL maps use different zoom levels to show equivalent visual density:
 - **Canvas (Leaflet, OpenLayers):** Zoom 11
 - **WebGL (MapLibre, Deck.gl):** Zoom 10
+
+## Benchmark Results by Device
+
+Community-contributed benchmark results across different devices. WebGL advantage typically increases on older/constrained hardware.
+
+### Summary Table
+
+| Device | Browser | MapLibre | Deck.gl | Leaflet | OpenLayers | Notes |
+|--------|---------|----------|---------|---------|------------|-------|
+| M3 Max MacBook Pro (2023) | Chrome | 120 FPS / 0.2ms | 120 FPS / 1.0ms | 80 FPS / 0.9ms | 74 FPS / 1.3ms | High-end baseline |
+
+### Detailed Results
+
+#### M3 Max MacBook Pro (2023)
+- **Tester:** Alex Chambers
+- **Date:** 2026-01-20
+- **Browser:** Chrome 131
+- **OS:** macOS Sequoia 15.3
+
+| Library | Score | Avg FPS | Jitter |
+|---------|-------|---------|--------|
+| MapLibre GL | 100 | 120 | 0.2ms |
+| Deck.gl | 97 | 120 | 1.0ms |
+| Leaflet 2.0 | 80 | 80 | 0.9ms |
+| OpenLayers | 69 | 74 | 1.3ms |
+
+**Observations:** WebGL libraries hit 120 FPS cap (likely V-Sync). MapLibre wins on jitter consistency.
+
+---
+
+### Contributing Results
+
+To add your device's benchmark results:
+
+1. Run the benchmark at http://localhost:3000 (click "Run Benchmark" button)
+2. Add a new section below with:
+   - Device name and year
+   - Browser and version
+   - OS and version
+   - Results table (Score, Avg FPS, Jitter for each library)
+   - Any observations (throttling, battery mode, etc.)
+
+**Priority devices to test:**
+- 3+ year old Android tablets
+- Budget smartphones
+- iPads (various generations)
+- Older Intel MacBooks
+- Windows laptops with integrated graphics
